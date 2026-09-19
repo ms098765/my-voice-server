@@ -1,5 +1,3 @@
 fastapi
 uvicorn
 google-genai
-twilio
-python-multipart
