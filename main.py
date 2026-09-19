@@ -29,7 +29,7 @@ async def custom_llm(request: Request):
         else:
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.6-flash",
                 contents=f"Answer concisely in 2 sentences: {user_prompt}",
                 config=types.GenerateContentConfig(
                     tools=[types.Tool(google_search=types.GoogleSearch())],
@@ -37,7 +37,6 @@ async def custom_llm(request: Request):
             )
             answer = response.text
     except Exception as e:
-        # THIS WILL PRINT THE EXACT CAUSE OF THE CRASH TO VAPI
         answer = f"Crash details: {str(e)}"
         print(f"CRASH DETAILS: {str(e)}")
 
@@ -49,7 +48,7 @@ async def custom_llm(request: Request):
                 "id": "1",
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
-                "model": "gemini-2.5-flash",
+                "model": "gemini-3.6-flash",
                 "choices": [{"index": 0, "delta": {"content": answer}, "finish_reason": None}]
             }
             yield f"data: {json.dumps(chunk)}\n\n"
@@ -58,7 +57,7 @@ async def custom_llm(request: Request):
                 "id": "1",
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
-                "model": "gemini-2.5-flash",
+                "model": "gemini-3.6-flash",
                 "choices": [{"index": 0, "delta": {}, "finish_reason": "stop"}]
             }
             yield f"data: {json.dumps(stop_chunk)}\n\n"
@@ -70,7 +69,7 @@ async def custom_llm(request: Request):
             "id": "1",
             "object": "chat.completion",
             "created": int(time.time()),
-            "model": "gemini-2.5-flash",
+            "model": "gemini-3.6-flash",
             "choices": [{"index": 0, "message": {"role": "assistant", "content": answer}, "finish_reason": "stop"}],
             "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
         }
