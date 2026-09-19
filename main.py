@@ -15,7 +15,6 @@ async def custom_llm(request: Request):
     except Exception:
         data = {}
         
-    # 1. Get the user's voice question from Vapi
     messages = data.get("messages", [])
     user_prompt = "Hello"
     for msg in reversed(messages):
@@ -23,31 +22,31 @@ async def custom_llm(request: Request):
             user_prompt = msg.get("content", "")
             break
 
-    # 2. Safely query Google Gemini
     try:
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            answer = "Server error. The Gemini API key is missing from Render."
+            answer = "Server error. The API key is missing."
         else:
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=f"Answer concisely in 2 short sentences for a phone call: {user_prompt}",
+                contents=f"Answer concisely in 2 sentences: {user_prompt}",
                 config=types.GenerateContentConfig(
                     tools=[types.Tool(google_search=types.GoogleSearch())],
                 ),
             )
             answer = response.text
     except Exception as e:
-        answer = "Sorry, I encountered an internal error while searching Google."
+        # THIS WILL PRINT THE EXACT CAUSE OF THE CRASH TO VAPI
+        answer = f"Crash details: {str(e)}"
+        print(f"CRASH DETAILS: {str(e)}")
 
-    # 3. Format the response exactly how Vapi expects it (Streaming Data)
     is_stream = data.get("stream", False)
     
     if is_stream:
         async def event_generator():
             chunk = {
-                "id": "chatcmpl-1",
+                "id": "1",
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": "gemini-2.5-flash",
@@ -56,7 +55,7 @@ async def custom_llm(request: Request):
             yield f"data: {json.dumps(chunk)}\n\n"
             
             stop_chunk = {
-                "id": "chatcmpl-1",
+                "id": "1",
                 "object": "chat.completion.chunk",
                 "created": int(time.time()),
                 "model": "gemini-2.5-flash",
@@ -68,7 +67,7 @@ async def custom_llm(request: Request):
         return StreamingResponse(event_generator(), media_type="text/event-stream")
     else:
         return {
-            "id": "chatcmpl-1",
+            "id": "1",
             "object": "chat.completion",
             "created": int(time.time()),
             "model": "gemini-2.5-flash",
